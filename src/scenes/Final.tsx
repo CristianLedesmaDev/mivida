@@ -19,11 +19,13 @@ type Beso = {
 const EMOJIS_BESO = ['💋', '❤️', '💖', '😘', '💕', '✨']
 
 function MarqueeApodos({ apodos }: { apodos: string[] }) {
-  if (apodos.length === 0) {
+  const apodosValidos = apodos.map((apodo) => apodo.trim()).filter(Boolean)
+
+  if (apodosValidos.length === 0) {
     return null
   }
 
-  const fila = apodos.map((apodo) => apodo).join('  ✦  ')
+  const fila = apodosValidos.join('  ✦  ')
 
   return (
     <div className="marquee-apodos" aria-hidden="true">

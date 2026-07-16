@@ -397,10 +397,7 @@ export function AdminPanel({ publicado }: AdminPanelProps) {
                 value={contenido.apodos.join('\n')}
                 onChange={(event) =>
                   actualizar({
-                    apodos: event.target.value
-                      .split('\n')
-                      .map((apodo) => apodo.trim())
-                      .filter(Boolean),
+                    apodos: event.target.value.split('\n'),
                   })
                 }
               />
@@ -522,10 +519,7 @@ export function AdminPanel({ publicado }: AdminPanelProps) {
                   actualizar({
                     carta: {
                       ...contenido.carta,
-                      parrafos: event.target.value
-                        .split(/\n\s*\n/)
-                        .map((parrafo) => parrafo.trim())
-                        .filter(Boolean),
+                      parrafos: event.target.value.split(/\n\s*\n/),
                     },
                   })
                 }

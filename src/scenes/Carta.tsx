@@ -51,11 +51,13 @@ export function Carta({ contenido, onNext }: CartaProps) {
 
           <h2 className="carta-titulo">{contenido.carta.titulo}</h2>
 
-          {contenido.carta.parrafos.map((parrafo, index) => (
-            <p key={index} className="carta-parrafo">
-              {parrafo}
-            </p>
-          ))}
+          {contenido.carta.parrafos
+            .filter((parrafo) => parrafo.trim().length > 0)
+            .map((parrafo, index) => (
+              <p key={index} className="carta-parrafo">
+                {parrafo}
+              </p>
+            ))}
 
           <p className="carta-despedida">{contenido.carta.despedida}</p>
           <p className="carta-firma">{contenido.firma}</p>

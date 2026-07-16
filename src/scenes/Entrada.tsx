@@ -15,7 +15,8 @@ export function Entrada({ contenido, onNext }: EntradaProps) {
   const [mensaje, setMensaje] = useState('')
   const [apodoIndice, setApodoIndice] = useState(0)
 
-  const apodos = contenido.apodos.length > 0 ? contenido.apodos : [contenido.nombre]
+  const apodosValidos = contenido.apodos.map((apodo) => apodo.trim()).filter(Boolean)
+  const apodos = apodosValidos.length > 0 ? apodosValidos : [contenido.nombre]
   const apodo = apodos[apodoIndice % apodos.length]
 
   useEffect(() => {

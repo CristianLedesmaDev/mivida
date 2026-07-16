@@ -1,6 +1,6 @@
 {
   "nombre": "Yaret",
-  "firma": "— Tuyo, hoy y siempre 💌",
+  "firma": "Mi manguita y tu manguito siempre jijij",
   "fechaInicio": "2024-12-16T00:00:00",
   "apodos": [
     "mivida",
@@ -13,25 +13,23 @@
     "mi bonita"
   ],
   "entrada": {
-    "saludo": "hola,",
-    "titulo": "Esta página es para Yaresita",
-    "subtitulo": "Alguien que te ama muchísimo la hizo especialmente para ti. No necesitas contraseña: tu sonrisa es el acceso.",
-    "boton": "Continuar"
+    "saludo": "OLAOALOALAOALA",
+    "titulo": "Con amor de tu maravilloso novio",
+    "subtitulo": "Te hice esta cartita con muchisimo amor, cada texto te juro que lo hice solo yo y nada mas que yo ",
+    "boton": "Empecemos muejeje"
   },
   "bienvenida": {
-    "titulo": "Bienvenida a tu rinconcito",
-    "texto": "Esto no es una página cualquiera, mivida: es una cartita interactiva. Ve dando click para avanzar, sin prisa, que cada parte la hice pensando en ti."
+    "titulo": "Bienvenida a mi colachon",
+    "texto": "Esta carta la tenia haciendo desde hace mucho y mira, ahora puedes entrar a in5ternet siempre que quieras y verla, te la hice con muchisimo amor mivida"
   },
   "contador": {
-    "titulo": "Nuestro tiempo juntos",
+    "titulo": "Lo que llevamos de noviesitos muejejej",
     "nota": "Desde el 16 de diciembre de 2024, cada segundo cuenta. Literal: míralo correr."
   },
   "carta": {
-    "titulo": "Para Yaresita, mi persona favorita",
+    "titulo": "para miamorrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
     "parrafos": [
-      "Hola, mivida. Si estás leyendo esto es porque por fin terminé la sorpresa que te venía preparando: una página solo tuya, hecha con el mismo cariño con el que tú me haces sonreír todos los días.",
-      "Desde el 16 de diciembre de 2024 mi vida suena distinto. Suena a tus risas, a Harry Styles cuando estás tú, a Milo J cuando te pienso, y a ese silencio bonito de cuando estamos juntos y no hace falta decir nada.",
-      "Quería regalarte algo que no se pudiera romper ni perder: un lugarcito en internet donde siempre puedas venir a leer cuánto te amo, mi mango con chile. Cada foto, cada palabra y cada detalle de aquí lo puse pensando en ti."
+      "Holiwsaddasd"
     ],
     "despedida": "Te amoquieroadoro, hoy, mañana y en todos los recargues de esta página."
   },
@@ -100,7 +98,8 @@
       {
         "id": "idioma-1",
         "idioma": "Español",
-        "texto": "Te amo"
+        "texto": "Te amo",
+        "nota": "teamo"
       },
       {
         "id": "idioma-2",

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { motion } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
 import type { Contenido } from '../content'
 import { AnimatedEmoji } from '../components/AnimatedEmoji'
@@ -9,6 +10,22 @@ type RazonesProps = {
 }
 
 const TODAS = 'Todas'
+
+const gridVariantes = {
+  oculto: {},
+  visible: { transition: { staggerChildren: 0.06, delayChildren: 0.05 } },
+}
+
+const cartaVariantes = {
+  oculto: { opacity: 0, y: 30, scale: 0.85, rotate: -3 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    rotate: 0,
+    transition: { type: 'spring', stiffness: 190, damping: 17 },
+  },
+}
 
 export function Razones({ contenido, onNext }: RazonesProps) {
   const [volteadas, setVolteadas] = useState<Set<string>>(new Set())
@@ -64,15 +81,24 @@ export function Razones({ contenido, onNext }: RazonesProps) {
           </div>
         )}
 
-        <div key={categoria} className="razones-grid">
+        <motion.div
+          key={categoria}
+          className="razones-grid"
+          initial="oculto"
+          animate="visible"
+          variants={gridVariantes}
+        >
           {visibles.map((razon, index) => {
             const volteada = volteadas.has(razon.id)
 
             return (
-              <button
+              <motion.button
                 key={razon.id}
                 type="button"
                 className={`razon-carta ${volteada ? 'razon-volteada' : ''}`}
+                variants={cartaVariantes}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.97 }}
                 onClick={() => voltear(razon.id)}
               >
                 <span className="razon-inner">
@@ -85,10 +111,10 @@ export function Razones({ contenido, onNext }: RazonesProps) {
                     <span>{razon.texto}</span>
                   </span>
                 </span>
-              </button>
+              </motion.button>
             )
           })}
-        </div>
+        </motion.div>
 
         {todasVolteadas && (
           <p className="razones-completas">¡las destapaste todas! y aún me faltan mil 💖</p>

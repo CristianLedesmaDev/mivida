@@ -55,41 +55,156 @@
   "razones": {
     "titulo": "Razones por las que te amo",
     "items": [
-      { "id": "razon-1", "emoji": "🍷", "texto": "Porque eres como el rojo vino: mi color favorito desde que es el tuyo.", "categoria": "Físico" },
-      { "id": "razon-2", "emoji": "🎶", "texto": "Porque contigo hasta las canciones tristes suenan bonito.", "categoria": "Momentos juntos" },
-      { "id": "razon-3", "emoji": "✨", "texto": "Porque eres mi \"Golden\": llegaste y todo se puso más brillante.", "categoria": "Personalidad" },
-      { "id": "razon-4", "emoji": "🥭", "texto": "Porque eres mi mango con chile: dulce, picosita y mi antojo de todos los días.", "categoria": "Personalidad" },
-      { "id": "razon-5", "emoji": "😂", "texto": "Porque nadie me hace reír como tú, ni cerca.", "categoria": "Personalidad" },
-      { "id": "razon-6", "emoji": "🏡", "texto": "Porque estar contigo se siente como llegar a casa.", "categoria": "Momentos juntos" }
+      {
+        "id": "razon-1",
+        "emoji": "🍷",
+        "texto": "Porque eres como el rojo vino: mi color favorito desde que es el tuyo.",
+        "categoria": "Físico"
+      },
+      {
+        "id": "razon-2",
+        "emoji": "🎶",
+        "texto": "Porque contigo hasta las canciones tristes suenan bonito.",
+        "categoria": "Momentos juntos"
+      },
+      {
+        "id": "razon-3",
+        "emoji": "✨",
+        "texto": "Porque eres mi \"Golden\": llegaste y todo se puso más brillante.",
+        "categoria": "Personalidad"
+      },
+      {
+        "id": "razon-4",
+        "emoji": "🥭",
+        "texto": "Porque eres mi mango con chile: dulce, picosita y mi antojo de todos los días.",
+        "categoria": "Personalidad"
+      },
+      {
+        "id": "razon-5",
+        "emoji": "😂",
+        "texto": "Porque nadie me hace reír como tú, ni cerca.",
+        "categoria": "Personalidad"
+      },
+      {
+        "id": "razon-6",
+        "emoji": "🏡",
+        "texto": "Porque estar contigo se siente como llegar a casa.",
+        "categoria": "Momentos juntos"
+      }
     ]
   },
   "idiomas": {
     "titulo": "Te amoquieroadoro",
     "subtitulo": "y como en un solo idioma no me alcanza, te lo digo en todos",
     "items": [
-      { "id": "idioma-1", "idioma": "Español", "texto": "Te amo" },
-      { "id": "idioma-2", "idioma": "Coreano", "texto": "사랑해", "nota": "saranghae" },
-      { "id": "idioma-3", "idioma": "Japonés", "texto": "愛してる", "nota": "aishiteru" },
-      { "id": "idioma-4", "idioma": "Inglés", "texto": "I love you" },
-      { "id": "idioma-5", "idioma": "Francés", "texto": "Je t'aime", "nota": "ye tem" },
-      { "id": "idioma-6", "idioma": "Italiano", "texto": "Ti amo" },
-      { "id": "idioma-7", "idioma": "Portugués", "texto": "Eu te amo" },
-      { "id": "idioma-8", "idioma": "Alemán", "texto": "Ich liebe dich", "nota": "ij libe dij" },
-      { "id": "idioma-9", "idioma": "Ruso", "texto": "Я тебя люблю", "nota": "ya tibiá liubliú" },
-      { "id": "idioma-10", "idioma": "Chino", "texto": "我爱你", "nota": "wǒ ài nǐ" },
-      { "id": "idioma-11", "idioma": "Árabe", "texto": "أحبك", "nota": "uhibbuki" },
-      { "id": "idioma-12", "idioma": "Náhuatl", "texto": "Nimitztlazohtla" }
+      {
+        "id": "idioma-1",
+        "idioma": "Español",
+        "texto": "Te amo"
+      },
+      {
+        "id": "idioma-2",
+        "idioma": "Coreano",
+        "texto": "사랑해",
+        "nota": "saranghae"
+      },
+      {
+        "id": "idioma-3",
+        "idioma": "Japonés",
+        "texto": "愛してる",
+        "nota": "aishiteru"
+      },
+      {
+        "id": "idioma-4",
+        "idioma": "Inglés",
+        "texto": "I love you"
+      },
+      {
+        "id": "idioma-5",
+        "idioma": "Francés",
+        "texto": "Je t'aime",
+        "nota": "ye tem"
+      },
+      {
+        "id": "idioma-6",
+        "idioma": "Italiano",
+        "texto": "Ti amo"
+      },
+      {
+        "id": "idioma-7",
+        "idioma": "Portugués",
+        "texto": "Eu te amo"
+      },
+      {
+        "id": "idioma-8",
+        "idioma": "Alemán",
+        "texto": "Ich liebe dich",
+        "nota": "ij libe dij"
+      },
+      {
+        "id": "idioma-9",
+        "idioma": "Ruso",
+        "texto": "Я тебя люблю",
+        "nota": "ya tibiá liubliú"
+      },
+      {
+        "id": "idioma-10",
+        "idioma": "Chino",
+        "texto": "我爱你",
+        "nota": "wǒ ài nǐ"
+      },
+      {
+        "id": "idioma-11",
+        "idioma": "Árabe",
+        "texto": "أحبك",
+        "nota": "uhibbuki"
+      },
+      {
+        "id": "idioma-12",
+        "idioma": "Náhuatl",
+        "texto": "Nimitztlazohtla"
+      }
     ]
   },
   "historia": {
     "titulo": "Nuestra historia",
     "subtitulo": "toca cada punto para revivir el momento",
     "items": [
-      { "id": "hito-1", "emoji": "👀", "fecha": "Antes de todo", "titulo": "Te empecé a ver distinto", "texto": "Un día dejaste de ser solo alguien más y no supe ni cómo pasó." },
-      { "id": "hito-2", "emoji": "💌", "fecha": "16 dic 2024", "titulo": "El día que empezamos", "texto": "La fecha que ahora es mi favorita del calendario, sin competencia." },
-      { "id": "hito-3", "emoji": "🎧", "fecha": "Poco después", "titulo": "Nuestra primera canción", "texto": "Desde ahí no puedo escucharla sin pensarte." },
-      { "id": "hito-4", "emoji": "🥭", "fecha": "En el camino", "titulo": "Te gané el apodo de mango con chile", "texto": "Dulce, picosita, y mi antojo constante desde entonces." },
-      { "id": "hito-5", "emoji": "♾️", "fecha": "Hoy y siempre", "titulo": "Lo que sigue", "texto": "Esta línea de tiempo la seguimos escribiendo juntos." }
+      {
+        "id": "hito-1",
+        "emoji": "👀",
+        "fecha": "Antes de todo",
+        "titulo": "Te empecé a ver distinto",
+        "texto": "Un día dejaste de ser solo alguien más y no supe ni cómo pasó."
+      },
+      {
+        "id": "hito-2",
+        "emoji": "💌",
+        "fecha": "16 dic 2024",
+        "titulo": "El día que empezamos",
+        "texto": "La fecha que ahora es mi favorita del calendario, sin competencia."
+      },
+      {
+        "id": "hito-3",
+        "emoji": "🎧",
+        "fecha": "Poco después",
+        "titulo": "Nuestra primera canción",
+        "texto": "Desde ahí no puedo escucharla sin pensarte."
+      },
+      {
+        "id": "hito-4",
+        "emoji": "🥭",
+        "fecha": "En el camino",
+        "titulo": "Te gané el apodo de mango con chile",
+        "texto": "Dulce, picosita, y mi antojo constante desde entonces."
+      },
+      {
+        "id": "hito-5",
+        "emoji": "♾️",
+        "fecha": "Hoy y siempre",
+        "titulo": "Lo que sigue",
+        "texto": "Esta línea de tiempo la seguimos escribiendo juntos."
+      }
     ]
   },
   "musica": {
@@ -97,10 +212,30 @@
     "subtitulo": "las canciones y playlists que suenan a nosotros",
     "playlists": [],
     "canciones": [
-      { "id": "cancion-1", "titulo": "Golden", "artista": "Harry Styles", "url": "" },
-      { "id": "cancion-2", "titulo": "Sweet Creature", "artista": "Harry Styles", "url": "" },
-      { "id": "cancion-3", "titulo": "M.A.I", "artista": "Milo J", "url": "" },
-      { "id": "cancion-4", "titulo": "Rara Vez", "artista": "Taiu & Milo J", "url": "" }
+      {
+        "id": "cancion-1",
+        "titulo": "Golden",
+        "artista": "Harry Styles",
+        "url": ""
+      },
+      {
+        "id": "cancion-2",
+        "titulo": "Sweet Creature",
+        "artista": "Harry Styles",
+        "url": ""
+      },
+      {
+        "id": "cancion-3",
+        "titulo": "M.A.I",
+        "artista": "Milo J",
+        "url": ""
+      },
+      {
+        "id": "cancion-4",
+        "titulo": "Rara Vez",
+        "artista": "Taiu & Milo J",
+        "url": ""
+      }
     ]
   },
   "final": {

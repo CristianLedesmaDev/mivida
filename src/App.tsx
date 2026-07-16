@@ -8,7 +8,6 @@ import {
   mergeContenido,
   type Contenido,
 } from './content'
-import { leerContenidoRemoto, suscribirseAContenido, supabaseListo } from './supabase'
 import { AdminPanel } from './AdminPanel'
 import { FloatingHearts } from './components/FloatingHearts'
 import { GlassFilter } from './components/GlassFilter'
@@ -21,7 +20,7 @@ import { Polaroids } from './scenes/Polaroids'
 import { Razones } from './scenes/Razones'
 import { Idiomas } from './scenes/Idiomas'
 import { Historia } from './scenes/Historia'
-import { Audios } from './scenes/Audios'
+import { Musica } from './scenes/Musica'
 import { Final } from './scenes/Final'
 
 type Ruta = 'experiencia' | 'panel'
@@ -35,7 +34,7 @@ const ESCENAS = [
   { id: 'razones', emoji: '💘' },
   { id: 'idiomas', emoji: '🌍' },
   { id: 'historia', emoji: '🪐' },
-  { id: 'audios', emoji: '🎙️' },
+  { id: 'musica', emoji: '🎧' },
   { id: 'final', emoji: '♾️' },
 ]
 
@@ -67,7 +66,7 @@ function Experiencia({ contenido, enPreview }: { contenido: Contenido; enPreview
     <Razones key="razones" contenido={contenido} onNext={avanzar} />,
     <Idiomas key="idiomas" contenido={contenido} onNext={avanzar} />,
     <Historia key="historia" contenido={contenido} onNext={avanzar} />,
-    <Audios key="audios" contenido={contenido} onNext={avanzar} />,
+    <Musica key="musica" contenido={contenido} onNext={avanzar} />,
     <Final key="final" contenido={contenido} onRestart={reiniciar} />,
   ]
 
@@ -127,46 +126,21 @@ function App() {
   }, [])
 
   useEffect(() => {
-    // Si Supabase ya está conectado, su contenido manda (así el admin puede
-    // publicar sin tocar GitHub). contenido.json queda como respaldo mientras
-    // se configura, o si Supabase falla por cualquier motivo.
+    // El contenido publicado vive en public/contenido.json; así el panel
+    // puede actualizar la página publicando directo a GitHub, sin servidor.
     let cancelado = false
 
-    async function cargarContenidoInicial() {
-      if (supabaseListo()) {
-        try {
-          const remoto = await leerContenidoRemoto()
-
-          if (!cancelado && remoto) {
-            setPublicado(mergeContenido(CONTENIDO_DEFAULT, remoto))
-            return
-          }
-        } catch {
-          // si falla, seguimos al respaldo de abajo
-        }
-      }
-
-      try {
-        const respuesta = await fetch(`${import.meta.env.BASE_URL}contenido.json?v=${Date.now()}`)
-        const datos = respuesta.ok ? await respuesta.json() : null
-
+    fetch(`${import.meta.env.BASE_URL}contenido.json?v=${Date.now()}`)
+      .then((respuesta) => (respuesta.ok ? respuesta.json() : null))
+      .then((datos) => {
         if (!cancelado && datos) {
           setPublicado(mergeContenido(CONTENIDO_DEFAULT, datos))
         }
-      } catch {
-        // se queda con CONTENIDO_DEFAULT
-      }
-    }
-
-    cargarContenidoInicial()
-
-    const desuscribir = supabaseListo()
-      ? suscribirseAContenido((nuevo) => setPublicado(mergeContenido(CONTENIDO_DEFAULT, nuevo)))
-      : () => {}
+      })
+      .catch(() => {})
 
     return () => {
       cancelado = true
-      desuscribir()
     }
   }, [])
 

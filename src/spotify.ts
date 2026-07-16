@@ -33,3 +33,29 @@ export function spotifyScanUrl(ref: SpotifyRef): string {
 export function spotifyEmbedAlto(ref: SpotifyRef): number {
   return ref.tipo === 'track' || ref.tipo === 'episode' ? 152 : 352
 }
+
+export type SpotifyPortada = {
+  titulo: string
+  miniatura: string | null
+}
+
+// Trae la portada real y el título desde la API pública de oEmbed de Spotify
+// (sin necesitar cuenta de desarrollador ni llaves).
+export async function obtenerPortadaSpotify(url: string): Promise<SpotifyPortada | null> {
+  try {
+    const respuesta = await fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(url)}`)
+
+    if (!respuesta.ok) {
+      return null
+    }
+
+    const datos = await respuesta.json()
+
+    return {
+      titulo: typeof datos.title === 'string' ? datos.title : '',
+      miniatura: typeof datos.thumbnail_url === 'string' ? datos.thumbnail_url : null,
+    }
+  } catch {
+    return null
+  }
+}

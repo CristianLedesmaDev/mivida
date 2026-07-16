@@ -92,20 +92,19 @@
       { "id": "hito-5", "emoji": "♾️", "fecha": "Hoy y siempre", "titulo": "Lo que sigue", "texto": "Esta línea de tiempo la seguimos escribiendo juntos." }
     ]
   },
-  "audios": {
-    "titulo": "Notas de voz",
-    "subtitulo": "para que también me puedas escuchar",
-    "items": []
-  },
-  "final": {
-    "titulo": "Y esto apenas empieza",
-    "mensaje": "Gracias por existir, por quererme y por dejarme quererte, mi papas a la francesa. Esta página va a seguir creciendo, igual que nosotros. Te amoquieroadoro, Yaresita.",
-    "spotifyPlaylistUrl": "",
-    "playlist": [
+  "musica": {
+    "titulo": "Nuestra música",
+    "subtitulo": "las canciones y playlists que suenan a nosotros",
+    "playlists": [],
+    "canciones": [
       { "id": "cancion-1", "titulo": "Golden", "artista": "Harry Styles", "url": "" },
       { "id": "cancion-2", "titulo": "Sweet Creature", "artista": "Harry Styles", "url": "" },
       { "id": "cancion-3", "titulo": "M.A.I", "artista": "Milo J", "url": "" },
       { "id": "cancion-4", "titulo": "Rara Vez", "artista": "Taiu & Milo J", "url": "" }
     ]
+  },
+  "final": {
+    "titulo": "Y esto apenas empieza",
+    "mensaje": "Gracias por existir, por quererme y por dejarme quererte, mi papas a la francesa. Esta página va a seguir creciendo, igual que nosotros. Te amoquieroadoro, Yaresita."
   }
 }

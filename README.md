@@ -3,8 +3,9 @@
 Una cartita web interactiva: entra con un "login" bonito, avanza con clicks y va descubriendo
 un contador del tiempo juntos, una carta dentro de un sobre, fotos tipo polaroid, razones para
 amarla (con filtros por categoría), "te amo" en todos los idiomas, una línea de tiempo orbital
-con sus recuerdos, notas de voz y un final con playlist de Spotify. Todo en modo claro, rosas
-pastel, toques rojo vino y detalles "liquid glass".
+con sus recuerdos, un apartado dedicado a su música de Spotify (playlists y canciones con
+portada real) y un final con lluvia de besos. Todo en modo claro, rosas pastel, toques rojo
+vino y detalles "liquid glass".
 
 ## Cómo verla en tu compu
 
@@ -52,81 +53,53 @@ Abre el link que aparece (normalmente `http://localhost:5173`).
 El panel tiene un menú por secciones para editar TODO: lo básico (nombre, firma, fecha,
 apodos), la entrada, la bienvenida, el contador, la carta, las fotos (se comprimen solas y
 las recortas ahí mismo), las razones (con categorías), los "te amo" en todos los idiomas,
-la línea de tiempo, los audios, la playlist con Spotify y la pantalla final.
+la línea de tiempo, la música de Spotify y la pantalla final.
 
 ### Spotify
 
-En la pestaña **🎧 Playlist** pega el link de cada canción (en Spotify: compartir → copiar
-enlace). En la página aparece el reproductor con la portada y el código de Spotify para
-escanear.
+En la pestaña **🎧 Spotify** puedes agregar:
+- **Playlists completas** (varias si quieres): en Spotify → abre la playlist → **Compartir →
+  Copiar enlace al playlist** → pégalo ahí. Sale como reproductor grande con las portadas
+  reales de las canciones.
+- **Canciones sueltas**: mismo truco, copiar enlace de la canción. Con link se ve la portada
+  real y el código para escanear; sin link se muestra como pendiente hasta que lo agregues.
 
-## Publicar tus cambios: Supabase (recomendado)
+## Publicar tus cambios: directo a GitHub (recomendado, sin base de datos)
 
-Por defecto, sin nada configurado, la página muestra lo que hay en `public/contenido.json`
-(el "Plan B" de abajo). Pero si conectas un proyecto gratis de **Supabase**, los cambios que
-hagas en el panel se publican con un clic y **ella los ve sin que tú tengas que subir nada a
-GitHub cada vez** — incluso en vivo, si ya tiene la página abierta cuando publicas.
+Todo lo que edites en el panel se guarda primero en tu navegador. Para que **ella lo vea**,
+necesitas publicarlo — y con esto configurado, publicar es solo tocar un botón, sin usar la
+web de GitHub cada vez.
 
-Esto vive dentro del panel en la pestaña **🔌 Conexión**, pero aquí está el resumen:
+Esto vive dentro del panel en la pestaña **🚀 Publicar**, pero aquí está el resumen:
 
-1. Crea cuenta gratis en [supabase.com](https://supabase.com) y un proyecto nuevo.
-2. Ve a **SQL Editor** del proyecto → pega y ejecuta esto (crea la tabla de contenido, sus
-   permisos, y los buckets para fotos/audios):
+1. En GitHub: tu foto de perfil (arriba a la derecha) → **Settings** → baja hasta el final del
+   menú izquierdo → **Developer settings**.
+2. **Personal access tokens → Fine-grained tokens → Generate new token**.
+3. Ponle un nombre (ej. "mi página"), en **Repository access** elige **Only select
+   repositories** y selecciona tu repositorio.
+4. Baja a **Permissions → Repository permissions**, busca **Contents** y cámbialo a
+   **Read and write**.
+5. Baja del todo y dale **Generate token**. Copia el token completo (empieza con
+   `github_pat_`) — GitHub solo te lo muestra una vez.
+6. En tu panel (`#panel` → pestaña **🚀 Publicar**), pega tu usuario de GitHub, el nombre del
+   repositorio, y ese token. Desde ahí, cada **"Guardar y publicar"** sube tus cambios
+   directo a `public/contenido.json` en tu repositorio, y en 1-2 minutos GitHub Pages la
+   actualiza sola.
 
-   ```sql
-   create table public.contenido (
-     id int primary key default 1,
-     data jsonb not null,
-     updated_at timestamptz not null default now(),
-     constraint solo_una_fila check (id = 1)
-   );
-   insert into public.contenido (id, data) values (1, '{}'::jsonb);
-   alter table public.contenido enable row level security;
+El token se guarda solo en este navegador (en `localStorage`), nunca sale de tu computadora
+salvo para hablar directo con la API de GitHub.
 
-   create policy "lectura publica" on public.contenido
-     for select using (true);
-   create policy "solo admin escribe" on public.contenido
-     for all using (auth.role() = 'authenticated')
-     with check (auth.role() = 'authenticated');
+### Fotos
 
-   insert into storage.buckets (id, name, public) values ('fotos', 'fotos', true);
-   insert into storage.buckets (id, name, public) values ('audios', 'audios', true);
+Como no hay ningún servidor externo, las fotos que subas en el panel se comprimen y se
+guardan como texto (base64) directo dentro de `contenido.json`. Esto funciona muy bien para
+fotos normales de celular; si el archivo empieza a pesar mucho (muchísimas fotos grandes),
+el panel te avisa para que quites o recortes alguna.
 
-   create policy "fotos lectura publica" on storage.objects
-     for select using (bucket_id = 'fotos');
-   create policy "fotos solo admin sube" on storage.objects
-     for insert with check (bucket_id = 'fotos' and auth.role() = 'authenticated');
-   create policy "audios lectura publica" on storage.objects
-     for select using (bucket_id = 'audios');
-   create policy "audios solo admin sube" on storage.objects
-     for insert with check (bucket_id = 'audios' and auth.role() = 'authenticated');
-   ```
+### Plan B: archivo mágico (sin token)
 
-3. Ve a **Authentication → Users → Add user** y crea tu usuario (tu correo + una contraseña).
-   Esa va a ser tu cuenta de admin para publicar — nadie más la tiene.
-4. Ve a **Project Settings → API** y copia el **Project URL** y la **anon public key**.
-5. En tu computadora: copia `.env.local.example` a `.env.local` y pega ahí esos dos valores.
-   Reinicia `npm run dev`.
-6. Para que funcione también en la versión publicada (GitHub Pages): en tu repositorio →
-   **Settings → Secrets and variables → Actions**, crea los secrets `VITE_SUPABASE_URL` y
-   `VITE_SUPABASE_ANON_KEY` con esos mismos valores, y haz `git push` de nuevo (o vuelve a
-   correr el workflow desde la pestaña Actions).
-7. En tu panel (`#panel` → pestaña **🔌 Conexión**), inicia sesión con tu correo y contraseña.
-   Desde ahí, cada **"Guardar y publicar"** actualiza la página al instante.
-
-### Sobre la seguridad de este montaje
-
-Es un proyecto personal (una carta para tu novia), no un banco — así que el nivel de
-seguridad está pensado para eso: **cualquiera puede leer** el contenido (necesario para que
-ella la vea sin cuenta), pero **solo quien inicie sesión con tu correo/contraseña puede
-escribir** (gracias a las políticas RLS del script de arriba). La `anon key` de Supabase es
-pública por diseño — vive en el código del sitio y está bien que así sea; lo que protege tus
-datos son esas políticas, no que la llave sea secreta.
-
-### Plan B: archivo mágico (sin Supabase)
-
-Úsalo mientras conectas Supabase, o si prefieres no complicarte. No se actualiza sola: hay
-que subir el archivo a mano cada vez.
+Úsalo si no quieres crear un token, o como respaldo. No se actualiza sola: hay que subir el
+archivo a mano cada vez desde github.com.
 
 1. En el panel, toca **"Descargar archivo mágico"** → se baja `contenido.json`.
 2. En GitHub, abre tu repositorio → carpeta `public`.
@@ -138,8 +111,9 @@ que subir el archivo a mano cada vez.
 
 - Vite + React + TypeScript, CSS a mano (sin frameworks de estilos).
 - `framer-motion` para las animaciones de aparición y la línea de tiempo orbital.
-- `@supabase/supabase-js` para el contenido en vivo, autenticación y Storage (fotos/audios).
+- `three` para el fondo animado con shader, cargado aparte (code-splitting) para no pesar
+  en la carga inicial.
 - Los emojis animados son los [Noto Animated Emoji](https://googlefonts.github.io/noto-emoji-animation/)
   de Google, cargados desde su CDN.
-- El contenido vive en Supabase si está conectado; si no, usa `public/contenido.json`; si
-  falta, usa los textos de `src/content.ts`.
+- No hay backend ni base de datos: el contenido vive en `public/contenido.json`, y el panel
+  lo actualiza directo vía la API de GitHub (Contents API) usando un token personal.

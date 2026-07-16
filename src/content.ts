@@ -11,24 +11,23 @@ export type Razon = {
   categoria?: string
 }
 
-export type Cancion = {
+export type SpotifyCancion = {
   id: string
   titulo: string
   artista: string
-  url?: string
+  url: string
+}
+
+export type SpotifyPlaylist = {
+  id: string
+  etiqueta: string
+  url: string
 }
 
 export type Idioma = {
   id: string
   idioma: string
   texto: string
-  nota?: string
-}
-
-export type AudioClip = {
-  id: string
-  src: string
-  titulo: string
   nota?: string
 }
 
@@ -79,22 +78,22 @@ export type Contenido = {
     subtitulo: string
     items: Hito[]
   }
-  audios: {
+  musica: {
     titulo: string
     subtitulo: string
-    items: AudioClip[]
+    playlists: SpotifyPlaylist[]
+    canciones: SpotifyCancion[]
   }
   final: {
     titulo: string
     mensaje: string
-    spotifyPlaylistUrl?: string
-    playlist: Cancion[]
   }
 }
 
 export const CLAVE_BORRADOR = 'mivida-borrador'
 export const CLAVE_PREVIEW = 'mivida-preview'
 export const CLAVE_PANEL = 'mivida-panel-ok'
+export const CLAVE_GITHUB = 'mivida-github'
 export const PIN_PANEL = '161224'
 
 export const CATEGORIAS_RAZONES = ['Personalidad', 'Físico', 'Momentos juntos'] as const
@@ -255,22 +254,21 @@ export const CONTENIDO_DEFAULT: Contenido = {
       },
     ],
   },
-  audios: {
-    titulo: 'Notas de voz',
-    subtitulo: 'para que también me puedas escuchar',
-    items: [],
-  },
-  final: {
-    titulo: 'Y esto apenas empieza',
-    mensaje:
-      'Gracias por existir, por quererme y por dejarme quererte, mi papas a la francesa. Esta página va a seguir creciendo, igual que nosotros. Te amoquieroadoro, Yaresita.',
-    spotifyPlaylistUrl: '',
-    playlist: [
+  musica: {
+    titulo: 'Nuestra música',
+    subtitulo: 'las canciones y playlists que suenan a nosotros',
+    playlists: [],
+    canciones: [
       { id: 'cancion-1', titulo: 'Golden', artista: 'Harry Styles', url: '' },
       { id: 'cancion-2', titulo: 'Sweet Creature', artista: 'Harry Styles', url: '' },
       { id: 'cancion-3', titulo: 'M.A.I', artista: 'Milo J', url: '' },
       { id: 'cancion-4', titulo: 'Rara Vez', artista: 'Taiu & Milo J', url: '' },
     ],
+  },
+  final: {
+    titulo: 'Y esto apenas empieza',
+    mensaje:
+      'Gracias por existir, por quererme y por dejarme quererte, mi papas a la francesa. Esta página va a seguir creciendo, igual que nosotros. Te amoquieroadoro, Yaresita.',
   },
 }
 
@@ -315,20 +313,16 @@ export function mergeContenido(base: Contenido, extra: unknown): Contenido {
         typeof dato.historia?.subtitulo === 'string' ? dato.historia.subtitulo : base.historia.subtitulo,
       items: Array.isArray(dato.historia?.items) ? dato.historia.items : base.historia.items,
     },
-    audios: {
-      titulo: typeof dato.audios?.titulo === 'string' ? dato.audios.titulo : base.audios.titulo,
+    musica: {
+      titulo: typeof dato.musica?.titulo === 'string' ? dato.musica.titulo : base.musica.titulo,
       subtitulo:
-        typeof dato.audios?.subtitulo === 'string' ? dato.audios.subtitulo : base.audios.subtitulo,
-      items: Array.isArray(dato.audios?.items) ? dato.audios.items : base.audios.items,
+        typeof dato.musica?.subtitulo === 'string' ? dato.musica.subtitulo : base.musica.subtitulo,
+      playlists: Array.isArray(dato.musica?.playlists) ? dato.musica.playlists : base.musica.playlists,
+      canciones: Array.isArray(dato.musica?.canciones) ? dato.musica.canciones : base.musica.canciones,
     },
     final: {
       ...base.final,
       ...(dato.final ?? {}),
-      spotifyPlaylistUrl:
-        typeof dato.final?.spotifyPlaylistUrl === 'string'
-          ? dato.final.spotifyPlaylistUrl
-          : base.final.spotifyPlaylistUrl,
-      playlist: Array.isArray(dato.final?.playlist) ? dato.final.playlist : base.final.playlist,
     },
   }
 }

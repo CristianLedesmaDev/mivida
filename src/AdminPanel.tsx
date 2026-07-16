@@ -1,20 +1,15 @@
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
-import type { Session } from '@supabase/supabase-js'
+import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import {
   ArrowDown,
   ArrowUp,
   Check,
+  Cloud,
   CloudUpload,
-  Copy,
   Crop,
-  Database,
   Download,
   Eye,
   FileUp,
-  LogIn,
-  LogOut,
   Lock,
-  Mic,
   Plus,
   RotateCcw,
   Trash2,
@@ -30,19 +25,10 @@ import {
   guardarBorrador,
   leerBorrador,
   mergeContenido,
-  type AudioClip,
   type Contenido,
   type Foto,
 } from './content'
-import {
-  alCambiarSesion,
-  cerrarSesion,
-  guardarContenidoRemoto,
-  iniciarSesion,
-  sesionActual,
-  subirArchivo,
-  supabaseListo,
-} from './supabase'
+import { configGitHubCompleta, guardarConfigGitHub, leerConfigGitHub, publicarEnGitHub, type ConfigGitHub } from './github'
 import { parseSpotify, spotifyScanUrl } from './spotify'
 import { ImageCropModal } from './components/ImageCropModal'
 
@@ -60,40 +46,12 @@ const SECCIONES = [
   { id: 'razones', etiqueta: '💘 Razones' },
   { id: 'idiomas', etiqueta: '🌍 Idiomas' },
   { id: 'historia', etiqueta: '🪐 Historia' },
-  { id: 'audios', etiqueta: '🎙️ Audios' },
-  { id: 'playlist', etiqueta: '🎧 Playlist' },
+  { id: 'musica', etiqueta: '🎧 Spotify' },
   { id: 'final', etiqueta: '🏁 Final' },
-  { id: 'conexion', etiqueta: '🔌 Conexión' },
+  { id: 'publicar', etiqueta: '🚀 Publicar' },
 ] as const
 
 type SeccionId = (typeof SECCIONES)[number]['id']
-
-const SQL_SETUP = `create table public.contenido (
-  id int primary key default 1,
-  data jsonb not null,
-  updated_at timestamptz not null default now(),
-  constraint solo_una_fila check (id = 1)
-);
-insert into public.contenido (id, data) values (1, '{}'::jsonb);
-alter table public.contenido enable row level security;
-
-create policy "lectura publica" on public.contenido
-  for select using (true);
-create policy "solo admin escribe" on public.contenido
-  for all using (auth.role() = 'authenticated')
-  with check (auth.role() = 'authenticated');
-
-insert into storage.buckets (id, name, public) values ('fotos', 'fotos', true);
-insert into storage.buckets (id, name, public) values ('audios', 'audios', true);
-
-create policy "fotos lectura publica" on storage.objects
-  for select using (bucket_id = 'fotos');
-create policy "fotos solo admin sube" on storage.objects
-  for insert with check (bucket_id = 'fotos' and auth.role() = 'authenticated');
-create policy "audios lectura publica" on storage.objects
-  for select using (bucket_id = 'audios');
-create policy "audios solo admin sube" on storage.objects
-  for insert with check (bucket_id = 'audios' and auth.role() = 'authenticated');`
 
 const cargarImagen = (src: string) =>
   new Promise<HTMLImageElement>((resolve, reject) => {
@@ -103,9 +61,10 @@ const cargarImagen = (src: string) =>
     imagen.src = src
   })
 
-// Reduce las fotos antes de guardarlas para que el borrador local no pese
-// demasiado (solo aplica cuando aún no hay Supabase conectado).
-async function archivoADataUrl(file: File, maxLado = 1400, calidad = 0.85): Promise<string> {
+// Reduce las fotos antes de guardarlas: como no hay servidor, todas viven
+// como texto (base64) dentro de contenido.json, así que hay que mantenerlas
+// livianas para que el archivo no pese demasiado.
+async function archivoADataUrl(file: File, maxLado = 1100, calidad = 0.8): Promise<string> {
   const dataUrl = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => resolve(reader.result as string)
@@ -116,7 +75,7 @@ async function archivoADataUrl(file: File, maxLado = 1400, calidad = 0.85): Prom
   const imagen = await cargarImagen(dataUrl)
   const factor = Math.min(1, maxLado / Math.max(imagen.naturalWidth, imagen.naturalHeight))
 
-  if (factor === 1 && file.size < 350_000) {
+  if (factor === 1 && file.size < 250_000) {
     return dataUrl
   }
 
@@ -158,10 +117,6 @@ function PinGate({ onOk }: { onOk: () => void }) {
       <div className="tarjeta-escena tarjeta-pin">
         <Lock size={38} className="pin-icono" />
         <h2 className="titulo-escena">Panel secreto</h2>
-        <p className="subtitulo-escena">
-          esta parte es solo para quien hizo la página. Pista: la fecha en la que todo empezó
-          (ddmmaa).
-        </p>
 
         <input
           className="pin-input"
@@ -198,14 +153,8 @@ export function AdminPanel({ publicado }: AdminPanelProps) {
   const [estado, setEstado] = useState('Todo lo que edites aquí se guarda como borrador en este navegador.')
   const [fotoRecorte, setFotoRecorte] = useState<Foto | null>(null)
   const [publicando, setPublicando] = useState(false)
-  const [sesion, setSesion] = useState<Session | null>(null)
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [entrandoSesion, setEntrandoSesion] = useState(false)
-  const [errorSesion, setErrorSesion] = useState('')
-  const [sqlCopiado, setSqlCopiado] = useState(false)
+  const [configGitHub, setConfigGitHub] = useState<ConfigGitHub>(() => leerConfigGitHub())
   const inputFotos = useRef<HTMLInputElement>(null)
-  const inputAudios = useRef<HTMLInputElement>(null)
   const inputImportar = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -218,23 +167,22 @@ export function AdminPanel({ publicado }: AdminPanelProps) {
     }
   }, [contenido, autorizado])
 
-  useEffect(() => {
-    if (!autorizado || !supabaseListo()) {
-      return
-    }
-
-    sesionActual().then(setSesion)
-    return alCambiarSesion(setSesion)
-  }, [autorizado])
-
   if (!autorizado) {
     return <PinGate onOk={() => setAutorizado(true)} />
   }
 
-  const conectado = supabaseListo() && sesion !== null
+  const listoParaPublicar = configGitHubCompleta(configGitHub)
 
   const actualizar = (parche: Partial<Contenido>) => {
     setContenido((previo) => ({ ...previo, ...parche }))
+  }
+
+  const actualizarConfigGitHub = (parche: Partial<ConfigGitHub>) => {
+    setConfigGitHub((previa) => {
+      const nueva = { ...previa, ...parche }
+      guardarConfigGitHub(nueva)
+      return nueva
+    })
   }
 
   const verComoElla = () => {
@@ -281,62 +229,22 @@ export function AdminPanel({ publicado }: AdminPanelProps) {
       return
     }
 
-    if (!supabaseListo()) {
-      setSeccion('conexion')
-      setEstado('⚠ Primero conecta Supabase (pestaña 🔌 Conexión) para publicar sin GitHub.')
-      return
-    }
-
-    if (!sesion) {
-      setSeccion('conexion')
-      setEstado('⚠ Primero inicia sesión (pestaña 🔌 Conexión) para poder publicar.')
+    if (!listoParaPublicar) {
+      setSeccion('publicar')
+      setEstado('⚠ Primero conecta tu GitHub (pestaña 🚀 Publicar) para publicar con un clic.')
       return
     }
 
     setPublicando(true)
-    setEstado('Publicando… ⏳')
+    setEstado('Publicando en GitHub… ⏳')
 
     try {
-      await guardarContenidoRemoto(contenido)
-      setEstado('¡Publicado! Ella ya lo puede ver, sin esperar nada más. 💘')
+      const mensaje = await publicarEnGitHub(configGitHub, contenido)
+      setEstado(mensaje)
     } catch (error) {
       setEstado(`⚠ ${error instanceof Error ? error.message : 'Algo salió mal. Intenta de nuevo.'}`)
     } finally {
       setPublicando(false)
-    }
-  }
-
-  const entrar = async (event: FormEvent) => {
-    event.preventDefault()
-
-    if (entrandoSesion) {
-      return
-    }
-
-    setEntrandoSesion(true)
-    setErrorSesion('')
-
-    try {
-      await iniciarSesion(email, password)
-      setPassword('')
-    } catch (error) {
-      setErrorSesion(error instanceof Error ? error.message : 'No se pudo iniciar sesión.')
-    } finally {
-      setEntrandoSesion(false)
-    }
-  }
-
-  const salir = async () => {
-    await cerrarSesion()
-  }
-
-  const copiarSql = async () => {
-    try {
-      await navigator.clipboard.writeText(SQL_SETUP)
-      setSqlCopiado(true)
-      setTimeout(() => setSqlCopiado(false), 2000)
-    } catch {
-      // si el navegador bloquea el portapapeles, igual pueden seleccionar el texto a mano
     }
   }
 
@@ -356,8 +264,11 @@ export function AdminPanel({ publicado }: AdminPanelProps) {
 
     for (const archivo of archivos) {
       try {
-        const src = conectado ? await subirArchivo('fotos', archivo) : await archivoADataUrl(archivo)
-        nuevas.push({ id: crypto.randomUUID(), src, caption: archivo.name.replace(/\.[^.]+$/, '') })
+        nuevas.push({
+          id: crypto.randomUUID(),
+          src: await archivoADataUrl(archivo),
+          caption: archivo.name.replace(/\.[^.]+$/, ''),
+        })
       } catch {
         // Si una foto falla, seguimos con las demás.
       }
@@ -368,42 +279,6 @@ export function AdminPanel({ publicado }: AdminPanelProps) {
       setEstado(`Se ${nuevas.length === 1 ? 'agregó 1 foto' : `agregaron ${nuevas.length} fotos`}. Dales recorte para que queden perfectas. ✂`)
     } else {
       setEstado('⚠ No se pudo leer ninguna de esas fotos.')
-    }
-  }
-
-  const subirAudios = async (event: ChangeEvent<HTMLInputElement>) => {
-    const archivos = Array.from(event.target.files ?? []).filter((archivo) =>
-      archivo.type.startsWith('audio/')
-    )
-    event.target.value = ''
-
-    if (archivos.length === 0) {
-      return
-    }
-
-    if (!conectado) {
-      setEstado('⚠ Conecta Supabase e inicia sesión primero (pestaña 🔌 Conexión) para subir audio.')
-      return
-    }
-
-    setEstado('Subiendo audio…')
-
-    const nuevos: AudioClip[] = []
-
-    for (const archivo of archivos) {
-      try {
-        const src = await subirArchivo('audios', archivo)
-        nuevos.push({ id: crypto.randomUUID(), src, titulo: archivo.name.replace(/\.[^.]+$/, '') })
-      } catch {
-        // si un audio falla, seguimos con los demás
-      }
-    }
-
-    if (nuevos.length > 0) {
-      actualizar({ audios: { ...contenido.audios, items: [...contenido.audios.items, ...nuevos] } })
-      setEstado(`Se ${nuevos.length === 1 ? 'agregó 1 audio' : `agregaron ${nuevos.length} audios`}. 🎙️`)
-    } else {
-      setEstado('⚠ No se pudo subir ningún audio.')
     }
   }
 
@@ -452,9 +327,9 @@ export function AdminPanel({ publicado }: AdminPanelProps) {
           <p className="panel-eyebrow">panel secreto 🔧💘</p>
           <h1>Editor de tu página para {contenido.nombre}</h1>
           <p className="panel-estado">{estado}</p>
-          <span className={`estado-conexion ${conectado ? 'estado-conexion-ok' : ''}`}>
-            <Database size={13} />
-            {conectado ? 'Supabase conectado — publicas al instante' : 'Supabase sin conectar'}
+          <span className={`estado-conexion ${listoParaPublicar ? 'estado-conexion-ok' : ''}`}>
+            <Cloud size={13} />
+            {listoParaPublicar ? 'GitHub conectado — publicas al instante' : 'GitHub sin conectar'}
           </span>
         </div>
 
@@ -623,7 +498,6 @@ export function AdminPanel({ publicado }: AdminPanelProps) {
                 }
               />
             </label>
-            <p className="panel-nota">La fecha del contador se cambia en “💗 Lo básico”.</p>
           </section>
         )}
 
@@ -686,9 +560,6 @@ export function AdminPanel({ publicado }: AdminPanelProps) {
               <Upload size={22} />
               <span>
                 <strong>Sube sus fotos</strong>
-                {conectado
-                  ? 'se guardan en tu Supabase y luego las recortas aquí mismo'
-                  : 'se comprimen y guardan en este navegador; conecta Supabase para que vivan en la nube'}
               </span>
             </button>
 
@@ -746,9 +617,6 @@ export function AdminPanel({ publicado }: AdminPanelProps) {
                 }
               />
             </label>
-            <p className="panel-nota">
-              Ponles categoría para que aparezcan chips de filtro en la página (ej. {CATEGORIAS_RAZONES.join(', ')}).
-            </p>
 
             {contenido.razones.items.map((razon) => (
               <div key={razon.id} className="fila-razon">
@@ -1081,142 +949,128 @@ export function AdminPanel({ publicado }: AdminPanelProps) {
           </section>
         )}
 
-        {seccion === 'audios' && (
+        {seccion === 'musica' && (
           <section className="panel-seccion">
-            <h2>🎙️ Audios ({contenido.audios.items.length})</h2>
+            <h2>🎧 Nuestra música en Spotify</h2>
             <label className="campo">
               <span>Título de la sección</span>
               <input
-                value={contenido.audios.titulo}
-                onChange={(event) =>
-                  actualizar({ audios: { ...contenido.audios, titulo: event.target.value } })
-                }
+                value={contenido.musica.titulo}
+                onChange={(event) => actualizar({ musica: { ...contenido.musica, titulo: event.target.value } })}
               />
             </label>
             <label className="campo">
               <span>Subtítulo</span>
               <input
-                value={contenido.audios.subtitulo}
+                value={contenido.musica.subtitulo}
                 onChange={(event) =>
-                  actualizar({ audios: { ...contenido.audios, subtitulo: event.target.value } })
+                  actualizar({ musica: { ...contenido.musica, subtitulo: event.target.value } })
                 }
               />
             </label>
 
-            <input
-              ref={inputAudios}
-              type="file"
-              accept="audio/*"
-              multiple
-              className="hidden-input"
-              onChange={subirAudios}
-            />
+            <h3 className="panel-subtitulo">Playlists completas</h3>
 
-            {conectado ? (
-              <button className="subir-fotos" type="button" onClick={() => inputAudios.current?.click()}>
-                <Mic size={22} />
-                <span>
-                  <strong>Sube notas de voz o canciones</strong>
-                  se guardan directo en tu Supabase
-                </span>
-              </button>
-            ) : (
-              <p className="panel-nota">
-                ⚠ Conecta Supabase e inicia sesión (pestaña 🔌 Conexión) para poder subir audio: los
-                archivos de audio son pesados para guardarlos solo en este navegador.
-              </p>
-            )}
+            {contenido.musica.playlists.map((playlist) => {
+              const ref = parseSpotify(playlist.url)
 
-            <div className="panel-audios">
-              {contenido.audios.items.map((audio) => (
-                <article key={audio.id} className="panel-audio">
-                  <audio controls src={audio.src} />
-                  <input
-                    value={audio.titulo}
-                    placeholder="Título"
-                    onChange={(event) =>
-                      actualizar({
-                        audios: {
-                          ...contenido.audios,
-                          items: contenido.audios.items.map((item) =>
-                            item.id === audio.id ? { ...item, titulo: event.target.value } : item
-                          ),
-                        },
-                      })
-                    }
-                  />
-                  <input
-                    value={audio.nota ?? ''}
-                    placeholder="Nota (opcional)"
-                    onChange={(event) =>
-                      actualizar({
-                        audios: {
-                          ...contenido.audios,
-                          items: contenido.audios.items.map((item) =>
-                            item.id === audio.id ? { ...item, nota: event.target.value } : item
-                          ),
-                        },
-                      })
-                    }
-                  />
-                  <button
-                    type="button"
-                    className="accion-borrar boton-icono"
-                    title="Eliminar audio"
-                    onClick={() =>
-                      actualizar({
-                        audios: {
-                          ...contenido.audios,
-                          items: contenido.audios.items.filter((item) => item.id !== audio.id),
-                        },
-                      })
-                    }
-                  >
-                    <Trash2 size={15} />
-                  </button>
-                </article>
-              ))}
-            </div>
-          </section>
-        )}
+              return (
+                <div key={playlist.id} className="bloque-cancion">
+                  <div className="fila-cancion">
+                    <input
+                      value={playlist.etiqueta}
+                      placeholder="Nombre de la playlist (ej. Nuestros domingos)"
+                      onChange={(event) =>
+                        actualizar({
+                          musica: {
+                            ...contenido.musica,
+                            playlists: contenido.musica.playlists.map((item) =>
+                              item.id === playlist.id ? { ...item, etiqueta: event.target.value } : item
+                            ),
+                          },
+                        })
+                      }
+                    />
+                    <button
+                      type="button"
+                      className="accion-borrar boton-icono"
+                      title="Eliminar playlist"
+                      onClick={() =>
+                        actualizar({
+                          musica: {
+                            ...contenido.musica,
+                            playlists: contenido.musica.playlists.filter((item) => item.id !== playlist.id),
+                          },
+                        })
+                      }
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
 
-        {seccion === 'playlist' && (
-          <section className="panel-seccion">
-            <h2>🎧 Playlist con Spotify</h2>
+                  <div className="fila-url">
+                    <input
+                      value={playlist.url}
+                      placeholder="https://open.spotify.com/playlist/…"
+                      onChange={(event) =>
+                        actualizar({
+                          musica: {
+                            ...contenido.musica,
+                            playlists: contenido.musica.playlists.map((item) =>
+                              item.id === playlist.id ? { ...item, url: event.target.value } : item
+                            ),
+                          },
+                        })
+                      }
+                    />
+                    {playlist.url ? (
+                      ref ? (
+                        <span className="url-ok">
+                          <Check size={14} /> link válido
+                        </span>
+                      ) : (
+                        <span className="url-mal">link no reconocido</span>
+                      )
+                    ) : null}
+                  </div>
 
-            <div className="bloque-playlist-grande">
-              <label className="campo">
-                <span>Tu playlist completa de Spotify (opcional, la mejor opción)</span>
-                <input
-                  value={contenido.final.spotifyPlaylistUrl ?? ''}
-                  placeholder="https://open.spotify.com/playlist/…"
-                  onChange={(event) =>
-                    actualizar({ final: { ...contenido.final, spotifyPlaylistUrl: event.target.value } })
-                  }
-                />
-              </label>
-              <p className="panel-nota">
-                Créala en la app de Spotify, dale <strong>Compartir → Copiar enlace al playlist</strong> y
-                pégala aquí. Sale como un reproductor grande, arriba de las canciones sueltas.
-              </p>
-              {contenido.final.spotifyPlaylistUrl ? (
-                parseSpotify(contenido.final.spotifyPlaylistUrl) ? (
-                  <span className="url-ok">
-                    <Check size={14} /> link válido
-                  </span>
-                ) : (
-                  <span className="url-mal">link no reconocido</span>
-                )
-              ) : null}
-            </div>
+                  {ref && (
+                    <img
+                      className="spotify-scan spotify-scan-mini"
+                      src={spotifyScanUrl(ref)}
+                      alt="Código Spotify"
+                      loading="lazy"
+                      onError={(event) => {
+                        event.currentTarget.style.display = 'none'
+                      }}
+                    />
+                  )}
+                </div>
+              )
+            })}
 
-            <p className="panel-nota">
-              También puedes agregar canciones sueltas: pega el link de cada una (en Spotify:
-              compartir → copiar enlace). Si el link es válido, en la página aparece el reproductor
-              con la portada y el código para escanear. Sin link, se muestra solo el nombre.
-            </p>
+            <button
+              className="btn-suave"
+              type="button"
+              onClick={() =>
+                actualizar({
+                  musica: {
+                    ...contenido.musica,
+                    playlists: [
+                      ...contenido.musica.playlists,
+                      { id: crypto.randomUUID(), etiqueta: '', url: '' },
+                    ],
+                  },
+                })
+              }
+            >
+              <Plus size={16} />
+              agregar playlist
+            </button>
 
-            {contenido.final.playlist.map((cancion) => {
+            <h3 className="panel-subtitulo">Canciones sueltas</h3>
+
+            {contenido.musica.canciones.map((cancion) => {
               const ref = parseSpotify(cancion.url)
 
               return (
@@ -1227,9 +1081,9 @@ export function AdminPanel({ publicado }: AdminPanelProps) {
                       placeholder="Canción"
                       onChange={(event) =>
                         actualizar({
-                          final: {
-                            ...contenido.final,
-                            playlist: contenido.final.playlist.map((item) =>
+                          musica: {
+                            ...contenido.musica,
+                            canciones: contenido.musica.canciones.map((item) =>
                               item.id === cancion.id ? { ...item, titulo: event.target.value } : item
                             ),
                           },
@@ -1241,9 +1095,9 @@ export function AdminPanel({ publicado }: AdminPanelProps) {
                       placeholder="Artista"
                       onChange={(event) =>
                         actualizar({
-                          final: {
-                            ...contenido.final,
-                            playlist: contenido.final.playlist.map((item) =>
+                          musica: {
+                            ...contenido.musica,
+                            canciones: contenido.musica.canciones.map((item) =>
                               item.id === cancion.id ? { ...item, artista: event.target.value } : item
                             ),
                           },
@@ -1256,9 +1110,9 @@ export function AdminPanel({ publicado }: AdminPanelProps) {
                       title="Eliminar canción"
                       onClick={() =>
                         actualizar({
-                          final: {
-                            ...contenido.final,
-                            playlist: contenido.final.playlist.filter((item) => item.id !== cancion.id),
+                          musica: {
+                            ...contenido.musica,
+                            canciones: contenido.musica.canciones.filter((item) => item.id !== cancion.id),
                           },
                         })
                       }
@@ -1269,13 +1123,13 @@ export function AdminPanel({ publicado }: AdminPanelProps) {
 
                   <div className="fila-url">
                     <input
-                      value={cancion.url ?? ''}
+                      value={cancion.url}
                       placeholder="https://open.spotify.com/track/…"
                       onChange={(event) =>
                         actualizar({
-                          final: {
-                            ...contenido.final,
-                            playlist: contenido.final.playlist.map((item) =>
+                          musica: {
+                            ...contenido.musica,
+                            canciones: contenido.musica.canciones.map((item) =>
                               item.id === cancion.id ? { ...item, url: event.target.value } : item
                             ),
                           },
@@ -1313,10 +1167,10 @@ export function AdminPanel({ publicado }: AdminPanelProps) {
               type="button"
               onClick={() =>
                 actualizar({
-                  final: {
-                    ...contenido.final,
-                    playlist: [
-                      ...contenido.final.playlist,
+                  musica: {
+                    ...contenido.musica,
+                    canciones: [
+                      ...contenido.musica.canciones,
                       { id: crypto.randomUUID(), titulo: '', artista: '', url: '' },
                     ],
                   },
@@ -1351,114 +1205,57 @@ export function AdminPanel({ publicado }: AdminPanelProps) {
                 }
               />
             </label>
-            <p className="panel-nota">
-              Arriba del final también corre una cintita con sus apodos (se editan en “💗 Lo básico”)
-              y abajo va la playlist (pestaña “🎧 Playlist”).
-            </p>
           </section>
         )}
 
-        {seccion === 'conexion' && (
+        {seccion === 'publicar' && (
           <>
             <section className="panel-seccion">
-              <h2>🔌 Conexión con Supabase (recomendado)</h2>
-              <p className="panel-nota">
-                Con esto conectado, cada vez que toques <strong>“Guardar y publicar”</strong> ella lo
-                ve al momento al abrir (o incluso en vivo si ya tiene la página abierta) — sin tocar
-                GitHub ni esperar nada.
-              </p>
+              <h2>🚀 Publicar directo a GitHub</h2>
 
-              {!supabaseListo() ? (
-                <p className="conexion-aviso">
-                  ⚠ Tu página todavía no tiene las llaves de Supabase. Sigue la guía de abajo y
-                  agrégalas como te explico.
-                </p>
-              ) : !sesion ? (
-                <form className="form-login" onSubmit={entrar}>
-                  <label className="campo">
-                    <span>Tu correo (el que registraste en Supabase)</span>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(event) => setEmail(event.target.value)}
-                      required
-                    />
-                  </label>
-                  <label className="campo">
-                    <span>Tu contraseña</span>
-                    <input
-                      type="password"
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                      required
-                    />
-                  </label>
-                  {errorSesion && <p className="pin-error">{errorSesion}</p>}
-                  <button className="btn-amor" type="submit" disabled={entrandoSesion}>
-                    <LogIn size={16} />
-                    {entrandoSesion ? 'Entrando…' : 'Iniciar sesión'}
-                  </button>
-                </form>
-              ) : (
-                <div className="sesion-activa">
+              <label className="campo">
+                <span>Tu usuario de GitHub</span>
+                <input
+                  value={configGitHub.owner}
+                  placeholder="ej. CristianLedesmaDev"
+                  onChange={(event) => actualizarConfigGitHub({ owner: event.target.value })}
+                />
+              </label>
+              <label className="campo">
+                <span>Nombre del repositorio</span>
+                <input
+                  value={configGitHub.repo}
+                  placeholder="ej. mivida"
+                  onChange={(event) => actualizarConfigGitHub({ repo: event.target.value })}
+                />
+              </label>
+              <label className="campo">
+                <span>Token de GitHub</span>
+                <input
+                  type="password"
+                  value={configGitHub.token}
+                  placeholder="github_pat_…"
+                  onChange={(event) => actualizarConfigGitHub({ token: event.target.value })}
+                />
+              </label>
+
+              {listoParaPublicar && (
+                <p className="sesion-activa">
                   <span>
-                    <Check size={15} /> Conectado como <strong>{sesion.user.email}</strong>
+                    <Check size={15} /> Listo para publicar en{' '}
+                    <strong>{configGitHub.owner}/{configGitHub.repo}</strong>
                   </span>
-                  <button className="btn-suave" type="button" onClick={salir}>
-                    <LogOut size={15} />
-                    Cerrar sesión
-                  </button>
-                </div>
+                </p>
               )}
 
-              <details className="guia-token">
-                <summary>¿Cómo conecto Supabase? (pasos, ~10 min, gratis)</summary>
-                <ol>
-                  <li>Crea cuenta gratis en <strong>supabase.com</strong> y un proyecto nuevo.</li>
-                  <li>
-                    Ve a <strong>SQL Editor</strong> → pega este script → <strong>Run</strong>:
-                    <div className="bloque-sql">
-                      <pre>{SQL_SETUP}</pre>
-                      <button type="button" className="btn-suave sql-copiar" onClick={copiarSql}>
-                        <Copy size={14} />
-                        {sqlCopiado ? 'copiado ✓' : 'copiar'}
-                      </button>
-                    </div>
-                  </li>
-                  <li>
-                    Ve a <strong>Authentication → Users → Add user</strong> y crea tu usuario (tu
-                    correo + una contraseña). Esa va a ser tu cuenta de admin.
-                  </li>
-                  <li>
-                    Ve a <strong>Project Settings → API</strong> y copia el <strong>Project URL</strong>{' '}
-                    y la <strong>anon public key</strong>.
-                  </li>
-                  <li>
-                    En tu computadora: copia el archivo <code>.env.local.example</code> a{' '}
-                    <code>.env.local</code> y pega ahí esos dos valores. Reinicia <code>npm run dev</code>.
-                  </li>
-                  <li>
-                    Para que funcione en GitHub Pages: en tu repositorio → <strong>Settings → Secrets and
-                    variables → Actions</strong>, crea los secrets <code>VITE_SUPABASE_URL</code> y{' '}
-                    <code>VITE_SUPABASE_ANON_KEY</code> con esos mismos valores, y vuelve a hacer push.
-                  </li>
-                  <li>Recarga esta página, inicia sesión arriba con tu correo y contraseña, ¡y ya!</li>
-                </ol>
-              </details>
+              <button className="btn-amor" type="button" onClick={guardarYPublicar} disabled={publicando}>
+                <CloudUpload size={17} />
+                {publicando ? 'Publicando…' : 'Publicar ahora'}
+              </button>
             </section>
 
             <section className="panel-seccion panel-guia">
               <h2>📦 Plan B: archivo mágico</h2>
-              <p className="panel-nota">
-                Úsalo mientras conectas Supabase, o como respaldo. No se actualiza sola: hay que
-                subir el archivo a mano cada vez.
-              </p>
-              <ol>
-                <li>Toca <strong>“Descargar archivo mágico”</strong>: se baja <code>contenido.json</code>.</li>
-                <li>En github.com abre tu repositorio → carpeta <code>public</code>.</li>
-                <li><strong>Add file → Upload files</strong>, arrastra el archivo y dale <strong>Commit changes</strong>.</li>
-                <li>Espera 1-2 minutos… ¡y ya lo ve ella! 💌</li>
-              </ol>
 
               <div className="panel-acciones">
                 <button className="btn-suave" type="button" onClick={descargarArchivo}>
@@ -1477,11 +1274,6 @@ export function AdminPanel({ publicado }: AdminPanelProps) {
                   onChange={importarArchivo}
                 />
               </div>
-
-              <p className="panel-nota">
-                Para volver a entrar aquí: agrega <code>#panel</code> al final del link, o toca 5
-                veces el corazoncito del final de la página. PIN: la fecha en la que empezaron (ddmmaa).
-              </p>
             </section>
           </>
         )}

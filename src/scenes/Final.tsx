@@ -1,9 +1,8 @@
 import { Suspense, useRef, useState } from 'react'
-import { Heart, Music4, RotateCcw } from 'lucide-react'
+import { Heart, RotateCcw } from 'lucide-react'
 import type { Contenido } from '../content'
 import { AnimatedEmoji } from '../components/AnimatedEmoji'
 import { ShaderBackgroundLazy } from '../components/ShaderBackgroundLazy'
-import { parseSpotify, spotifyEmbedAlto, spotifyEmbedUrl, spotifyScanUrl } from '../spotify'
 
 type FinalProps = {
   contenido: Contenido
@@ -39,7 +38,6 @@ function MarqueeApodos({ apodos }: { apodos: string[] }) {
 export function Final({ contenido, onRestart }: FinalProps) {
   const [besos, setBesos] = useState<Beso[]>([])
   const clicksSecretos = useRef(0)
-  const playlistRef = parseSpotify(contenido.final.spotifyPlaylistUrl)
 
   const lanzarBesos = () => {
     const nuevos: Beso[] = Array.from({ length: 9 }, () => ({
@@ -78,80 +76,6 @@ export function Final({ contenido, onRestart }: FinalProps) {
         <AnimatedEmoji emoji="♾️" size={64} />
         <h2 className="titulo-escena titulo-final">{contenido.final.titulo}</h2>
         <p className="final-mensaje">{contenido.final.mensaje}</p>
-
-        <div className="playlist">
-          {playlistRef && (
-            <div className="spotify-playlist-grande">
-              <span className="playlist-titulo">
-                <Music4 size={16} />
-                nuestra playlist completa
-              </span>
-              <div className="spotify-card spotify-card-grande">
-                <iframe
-                  src={spotifyEmbedUrl(playlistRef)}
-                  width="100%"
-                  height={spotifyEmbedAlto(playlistRef)}
-                  frameBorder="0"
-                  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                  loading="lazy"
-                  title="Nuestra playlist de Spotify"
-                />
-                <img
-                  className="spotify-scan"
-                  src={spotifyScanUrl(playlistRef)}
-                  alt="Código Spotify de nuestra playlist"
-                  loading="lazy"
-                  onError={(event) => {
-                    event.currentTarget.style.display = 'none'
-                  }}
-                />
-              </div>
-            </div>
-          )}
-
-          <span className="playlist-titulo">
-            <Music4 size={16} />
-            canciones que me suenan a ti
-          </span>
-
-          <div className="playlist-lista">
-            {contenido.final.playlist.map((cancion) => {
-              const ref = parseSpotify(cancion.url)
-
-              if (!ref) {
-                return (
-                  <span key={cancion.id} className="playlist-chip">
-                    🎵 {cancion.titulo}
-                    {cancion.artista ? ` — ${cancion.artista}` : ''}
-                  </span>
-                )
-              }
-
-              return (
-                <div key={cancion.id} className="spotify-card">
-                  <iframe
-                    src={spotifyEmbedUrl(ref)}
-                    width="100%"
-                    height={spotifyEmbedAlto(ref)}
-                    frameBorder="0"
-                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                    loading="lazy"
-                    title={cancion.titulo || 'Canción de Spotify'}
-                  />
-                  <img
-                    className="spotify-scan"
-                    src={spotifyScanUrl(ref)}
-                    alt={`Código Spotify de ${cancion.titulo || 'la canción'}`}
-                    loading="lazy"
-                    onError={(event) => {
-                      event.currentTarget.style.display = 'none'
-                    }}
-                  />
-                </div>
-              )
-            })}
-          </div>
-        </div>
 
         <div className="final-acciones">
           <button className="btn-amor" type="button" onClick={lanzarBesos}>
